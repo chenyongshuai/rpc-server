@@ -3,6 +3,9 @@ package com.rpc.start;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
 import com.rpc.provider.ServiceProvider;
 import com.rpc.provider.impl.ServiceProviderImpl;
 
@@ -13,9 +16,7 @@ import com.rpc.provider.impl.ServiceProviderImpl;
   */
 public class StartServer {
 	public static void main(String[] args) throws IOException {
-		ServiceProvider sp = new ServiceProviderImpl(9999);
-		sp.init();
+		ApplicationContext ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
 		System.in.read();
-		sp.close();
 	}
 }

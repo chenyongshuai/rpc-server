@@ -15,13 +15,33 @@ public interface Registry {
     public static final String PREFIX = "/RPC";
     public static final String SUFFIX = "/providers";
     /**
-     * 1. 查找
-     * 2. 注册
-     * 3. 监控
+     * 查找节点
+     * @param targetClass
+     * @return
      */
     public List<HostAndPort> searchService(Class targetClass);
+    /**
+     * 注册节点
+     * @param targetClass
+     * @param hostAndPort
+     */
     public void registerService(Class targetClass, HostAndPort hostAndPort);
+    /**
+     * 订阅节点
+     * @param targetClass
+     * @param hostAndPorts
+     * @return
+     * @throws IOException
+     */
     public List<HostAndPort> subscrible(Class targetClass, List<HostAndPort> hostAndPorts) throws IOException;
+    /**
+     * 删除节点
+     * @param targetClass
+     * @param hostAndPort
+     */
     public void deleteNode(Class targetClass, HostAndPort hostAndPort);
+    /**
+     * 释放资源
+     */
     public void close();
 }

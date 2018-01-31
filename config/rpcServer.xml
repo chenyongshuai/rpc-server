@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+        
+        
+        <!--  注册中心  Zookeeper   -->
+        <bean id="registry" class="com.rpc.registry.impl.ZooKeeperRegistry">
+            <constructor-arg name="server" value="192.168.126.128:2181"></constructor-arg>
+        </bean>
+        <!--  服务端  通讯  初始化配置   -->
+        <bean class="com.rpc.provider.impl.ServiceProviderImpl" init-method="init" destroy-method="close">
+            <constructor-arg name="port" value="9999"></constructor-arg>
+            <property name="registry" ref="registry"></property>
+            <property name="beanFactory">
+                <map>
+                    <entry key="com.rpc.service.HelloWorldService" value-ref="helloWorldService"></entry>
+                </map>
+            </property>
+        </bean>
+</beans>

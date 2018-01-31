@@ -1,10 +1,15 @@
 package com.rpc.provider.impl;
 
 import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.rpc.common.HostAndPort;
 import com.rpc.protocol.MethodInvokeMeta;
 import com.rpc.protocol.MethodInvokeMetaWarp;
 import com.rpc.protocol.Result;
@@ -36,7 +41,7 @@ import io.netty.handler.codec.LengthFieldPrepender;
   */
 public class ServiceProviderImpl implements ServiceProvider {
 	/**端口*/
-    private int port = 9999;
+    private int port;
     /**server端引导类*/
     private ServerBootstrap sbt;
     /**接受响应线程池*/
@@ -48,17 +53,18 @@ public class ServiceProviderImpl implements ServiceProvider {
     /**注册中心*/
     private Registry registry;
     
+	public void setBeanFactory(Map<Class, Object> beanFactory) {
+		this.beanFactory = beanFactory;
+	}
+
+	public void setRegistry(Registry registry) {
+		this.registry = registry;
+	}
+
 	public ServiceProviderImpl(int port) {
 		this.port = port;
 	}
 
-	public Map<Class, Object> getBeanFactory() {
-		return beanFactory;
-	}
-
-	public void setBeanFactory(Map<Class, Object> beanFactory) {
-		this.beanFactory = beanFactory;
-	}
 	/**
 	 * 初始化方法
 	 */
@@ -72,9 +78,6 @@ public class ServiceProviderImpl implements ServiceProvider {
         sbt.group(boss,worker);
         // 4.创建管道
         sbt.channel(NioServerSocketChannel.class);
-        //===================
-        beanFactory = new HashMap<Class, Object>();
-        beanFactory.put(HelloWorldService.class, new HelloWorldServiceImpl());
         start();
 	}
 	/**
@@ -127,11 +130,15 @@ public class ServiceProviderImpl implements ServiceProvider {
 						Result result = new Result();
 						try {
 							Object res = method.invoke(object, methodInvokeMeta.getParameters());
+							// 模拟异常发生
+							/*int n = 10;
+							n = n/0;*/
 							result.setResult(res);
 						} catch (Exception e) {
 							result.setException(e);
 						}
 						ResultWarp resultWarp = new ResultWarp();
+						resultWarp.setAttachment(mimw.getAttachment());
 						resultWarp.setResult(result);
 						// ***写数据到客户端
 						ChannelFuture channelFuture = ctx.writeAndFlush(resultWarp);
@@ -142,14 +149,20 @@ public class ServiceProviderImpl implements ServiceProvider {
 				});
 			}
 		});
+		//注册服务  获取IP
+		String host = InetAddress.getLocalHost().getHostAddress();
+		for (Class targetClass : beanFactory.keySet()) {
+			System.out.println("=====开始注册服务=====");
+			registry.registerService(targetClass, new HostAndPort(host, port));
+		}
 		new Thread(){
             @Override
             public void run() {
                 try {
                     System.out.println("服务器开始监听@"+port+"~!!~!~~!~");
-                    //6.绑定端口号
+                    // 6.绑定端口号
                     ChannelFuture channelFuture = sbt.bind(port).sync();
-                    //7. 等待服务关闭
+                    // 7. 等待服务关闭
                     channelFuture.channel().closeFuture().sync();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
